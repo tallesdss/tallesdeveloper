@@ -1,0 +1,173 @@
+# Especificação do Sistema — Biblioteca Digital
+
+## 1. Visão Geral
+
+Sistema web para gerenciamento de uma biblioteca digital de PDFs, organizados por categorias, com controle de acesso por perfil de usuário (Desenvolvedor e Cliente).
+
+**Status:** Fase 1 — Módulo de Biblioteca (MVP)
+**Fases futuras:** novos módulos a serem definidos posteriormente.
+
+---
+
+## 2. Perfis de Usuário
+
+### 2.1 Administrador / Desenvolvedor
+> **Decisão:** Admin e Desenvolvedor possuem as mesmas permissões (visão unificada). Ambos os papéis existem para fins de organização/nomenclatura, mas têm acesso total às mesmas funcionalidades.
+
+- Define e gerencia os papéis (roles) dos usuários — quem é Admin, Desenvolvedor ou Cliente
+- Cadastra, edita e remove usuários de qualquer perfil
+- Cadastra, edita e remove categorias
+- Faz upload (simulado), edição e remoção de PDFs
+- Acesso a configurações gerais do sistema
+- Pode comentar/avaliar PDFs (assim como qualquer perfil)
+
+### 2.2 Cliente
+- Visualiza categorias e PDFs disponíveis
+- Pode buscar/filtrar PDFs por categoria, título ou tags
+- Realiza download e/ou visualização online dos PDFs
+- Pode comentar/avaliar PDFs
+- Gerencia o próprio perfil (dados pessoais, senha)
+
+### 2.3 Hierarquia de Permissões (resumo)
+
+| Ação | Admin / Desenvolvedor | Cliente |
+|---|---|---|
+| Definir papéis/roles de usuários | ✅ | ❌ |
+| Gerenciar usuários (criar/editar/bloquear) | ✅ | ❌ |
+| Gerenciar categorias | ✅ | ❌ |
+| Upload/edição de PDFs (simulado) | ✅ | ❌ |
+| Visualizar/baixar PDFs | ✅ | ✅ |
+| Comentar/avaliar PDFs | ✅ | ✅ |
+
+## 3. Navegação e Fluxo
+
+### 3.1 Login
+- Tela de login (mockada, sem validação real de senha/token)
+- Após autenticar, navega para a **Home autenticada**
+
+### 3.2 Seletor de Perfil (troca simples)
+- Um seletor simples (ex: dropdown ou botão "trocar perfil") permite alternar entre Admin/Desenvolvedor e Cliente sem precisar deslogar
+- A troca de perfil atualiza dinamicamente o menu lateral e as páginas disponíveis
+
+### 3.3 Menu Lateral (Sidebar)
+- Menu lateral fixo na Home autenticada, com itens de navegação que mudam conforme o perfil ativo:
+
+| Perfil | Itens do menu lateral (sugestão) |
+|---|---|
+| Admin / Desenvolvedor | Biblioteca, Cadastrar PDF, Categorias (gerenciar), Usuários (gerenciar), Meu Perfil |
+| Cliente | Biblioteca, Meus Favoritos, Meu Perfil |
+
+> **Pendente de definição:** o menu lateral terá outros itens além dos relacionados à biblioteca (ex: Dashboard, Configurações)?
+
+## 4. Módulo: Biblioteca de PDFs
+
+### 4.1 Funcionalidades
+- [ ] Cadastro de categorias — via dados mockados (nome, descrição, ícone/cor opcional)
+- [ ] Listagem de PDFs mockados vinculados a uma ou mais categorias
+- [ ] Metadados do PDF (mock): título, **descrição**, autor, data de publicação, tags, thumbnail (capa)
+- [ ] Listagem de PDFs por categoria
+- [ ] Busca por nome/tag/categoria (filtro no front-end sobre os dados mockados)
+- [ ] **Botão de marcação (favoritar/salvar PDF)** — usuário marca PDFs de interesse para acesso rápido depois
+- [ ] Funções de biblioteca online: leitura/visualização do PDF direto no navegador (sem precisar baixar), navegação por páginas, zoom
+- [ ] Download do PDF (arquivo mockado local ou link fixo)
+- [ ] Simulação de tela de upload (Admin/Desenvolvedor) — sem persistência real, apenas adiciona ao mock em memória/LocalStorage
+- [ ] Comentários e avaliações (nota/estrelas) por PDF — todos os perfis podem comentar/avaliar
+- [ ] Contagem de visualizações/downloads (opcional, fase futura — também mockado)
+
+### 4.2 Tela "Cadastrar PDF" (Admin/Desenvolvedor)
+Formulário exclusivo do perfil Admin/Desenvolvedor (acessível pelo menu lateral) para simular o cadastro de um novo PDF na biblioteca, com os campos:
+- Título
+- **Descrição**
+- Autor
+- Categoria(s)
+- Tags
+- Thumbnail/capa (upload simulado ou URL)
+- Arquivo PDF (upload simulado ou URL)
+
+Ao salvar, o registro é adicionado ao mock (em memória/LocalStorage) e passa a aparecer na listagem da Biblioteca para todos os perfis.
+
+### 4.3 Estrutura de Dados (sugestão inicial)
+
+```
+Categoria
+- id
+- nome
+- descricao
+- criado_em
+
+PDF
+- id
+- titulo
+- descricao
+- categoria_id (ou tabela N:N se um PDF pode ter várias categorias)
+- autor
+- arquivo_url
+- thumbnail_url
+- tags []
+- criado_em
+- criado_por (usuario_id)
+
+Comentario
+- id
+- pdf_id
+- usuario_id
+- texto
+- nota (1 a 5, opcional)
+- criado_em
+
+Marcacao (favorito)
+- id
+- pdf_id
+- usuario_id
+- criado_em
+
+Usuario
+- id
+- nome
+- email
+- senha_hash
+- perfil (enum: admin | desenvolvedor | cliente)
+- criado_em
+```
+
+---
+
+## 4. Requisitos Técnicos
+
+**Escopo:** projeto 100% front-end, sem back-end/API real. Todos os dados (categorias, PDFs, usuários) serão **mockados** (hardcoded ou via arquivos JSON locais/mock service).
+
+| Item | Decisão |
+|---|---|
+| Front-end | **Flutter Web** |
+| Back-end | Não haverá — dados 100% mockup |
+| Banco de dados | Não haverá — mock local (ex: JSON estático, array em memória, LocalStorage) |
+| Armazenamento de arquivos (PDFs) | PDFs de exemplo hospedados localmente no projeto ou via URLs públicas fixas |
+| Autenticação | Simulada (mock de login, sem validação real de senha/token) |
+| Persistência de dados | Sim — dados mockados persistem entre reloads via **LocalStorage** (em Flutter Web, via pacote `shared_preferences` ou `localstorage`/`hive` com adaptador web) |
+
+> **Nota:** Como não há back-end, os "perfis de usuário" (Admin, Desenvolvedor, Cliente) servirão para simular diferentes visões/permissões na interface (ex: menus e ações diferentes conforme o perfil selecionado no mock), não para controle de acesso real.
+
+---
+
+## 5. Roadmap
+
+**Fase 1 (atual):**
+- Biblioteca de PDFs com categorias
+- Login mockado + Home autenticada
+- Menu lateral dinâmico por perfil
+- Seletor de troca de perfil
+- Comentários/avaliações em PDFs
+- Perfis: Admin/Desenvolvedor (unificados) e Cliente
+
+**Fases futuras:**
+- A definir conforme evolução do projeto
+
+---
+
+## 6. Pontos em Aberto
+
+1. Um PDF pode pertencer a mais de uma categoria?
+2. O menu lateral terá outros itens além dos relacionados à biblioteca (ex: Dashboard, Configurações)?
+3. Comentários/avaliações precisam de moderação (ex: Admin pode excluir comentário de outro usuário)?
+4. A avaliação será só texto, só nota (estrelas), ou os dois?
+5. Para o viewer de PDF em Flutter Web, há preferência por algum pacote específico (ex: `syncfusion_flutter_pdfviewer`, `flutter_pdfview`) ou abrir em nova aba/iframe?
